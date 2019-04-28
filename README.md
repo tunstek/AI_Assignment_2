@@ -18,4 +18,4 @@ python main.py
 ```
 
 ### Details
-Both algorithms are evaluated using 
+Both algorithms are evaluated using the "PongDeterministic-v4" gym environment
