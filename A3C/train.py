@@ -37,8 +37,8 @@ def train(rank, params, shared_model, optimizer):
         entropies = [] # initializing the list of entropies
         for step in range(params.num_steps): # going through the num_steps exploration steps
             value, action_values, (hx, cx) = model((Variable(state.unsqueeze(0)), (hx, cx))) # getting from the model the output V(S) of the critic, the output Q(S,A) of the actor, and the new hidden & cell states
-            prob = F.softmax(action_values) # generating a distribution of probabilities of the Q-values according to the softmax: prob(a) = exp(prob(a))/sum_b(exp(prob(b)))
-            log_prob = F.log_softmax(action_values) # generating a distribution of log probabilities of the Q-values according to the log softmax: log_prob(a) = log(prob(a))
+            prob = F.softmax(action_values, dim=1) # generating a distribution of probabilities of the Q-values according to the softmax: prob(a) = exp(prob(a))/sum_b(exp(prob(b)))
+            log_prob = F.log_softmax(action_values, dim=1) # generating a distribution of log probabilities of the Q-values according to the log softmax: log_prob(a) = log(prob(a))
             entropy = -(log_prob * prob).sum(1) # H(p) = - sum_x p(x).log(p(x))
             entropies.append(entropy) # storing the computed entropy
             action = prob.multinomial().data # selecting an action by taking a random draw from the prob distribution
