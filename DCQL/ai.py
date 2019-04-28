@@ -82,9 +82,13 @@ class AI:
 # Part 2 - Training the AI with Deep Convolutional Q-Learning
 
 # Getting the Doom environment
-doom_env = image_preprocessing.PreprocessImage(SkipWrapper(4)(ToDiscrete("minimal")(gym.make("ppaquette/DoomCorridor-v0"))), width = 80, height = 80, grayscale = True)
-doom_env = gym.wrappers.Monitor(doom_env, "videos", force = True)
+#doom_env = gym.make('PongDeterministic-v4')
+doom_env = image_preprocessing.PreprocessImage(SkipWrapper(4)((gym.make("PongDeterministic-v4"))), width = 80, height = 80, grayscale = True)
 number_actions = doom_env.action_space.n
+
+#doom_env = image_preprocessing.PreprocessImage(SkipWrapper(4)(ToDiscrete("minimal")(gym.make("ppaquette/DoomCorridor-v0"))), width = 80, height = 80, grayscale = True)
+#doom_env = gym.wrappers.Monitor(doom_env, "videos", force = True)
+#number_actions = doom_env.action_space.n
 
 # Building an AI
 cnn = CNN(number_actions)
