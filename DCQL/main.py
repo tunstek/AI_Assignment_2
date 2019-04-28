@@ -59,7 +59,7 @@ class SoftmaxBody(nn.Module):
         self.T = T
 
     def forward(self, outputs):
-        probs = F.softmax(outputs * self.T)   
+        probs = F.softmax(outputs * self.T, dim=1)
         actions = probs.multinomial()
         return actions
 
