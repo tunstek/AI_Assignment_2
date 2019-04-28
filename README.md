@@ -1,4 +1,4 @@
-#AI Assignment 2
+# AI Assignment 2
 
 ### Environment Setup
 ```
@@ -10,3 +10,12 @@ conda install -c conda-forge opencv
 python -m pip install gym==0.9.3
 python -m pip install gym[atari]
 ```
+
+### Running
+To run A3C and DCQL cd to the respective directory and run: 
+```
+python main.py
+```
+
+### Details
+Both algorithms are evaluated using 
