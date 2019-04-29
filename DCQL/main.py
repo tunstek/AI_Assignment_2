@@ -13,7 +13,6 @@ from torch.autograd import Variable
 # Importing the packages for OpenAI and Doom
 import gym
 from gym.wrappers import SkipWrapper
-from ppaquette_gym_doom.wrappers.action_space import ToDiscrete
 
 # Importing the other Python files
 import experience_replay, image_preprocessing
