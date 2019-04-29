@@ -21,7 +21,7 @@ python main.py
 Both algorithms are evaluated using the "PongDeterministic-v4" gym environment
 
 ### Results
-A3C - Top performance in 1 hour 40
+A3C - Top performance (1:21) in 1 hour 40
 
 <details><summary>Output:</summary>
 <p>

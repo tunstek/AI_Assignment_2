@@ -83,6 +83,7 @@ class AI:
 # Getting the Doom environment
 #doom_env = gym.make('PongDeterministic-v4')
 doom_env = image_preprocessing.PreprocessImage(SkipWrapper(4)((gym.make("PongDeterministic-v4"))), width = 80, height = 80, grayscale = True)
+doom_env = gym.wrappers.Monitor(doom_env, "videos", force=True)
 number_actions = doom_env.action_space.n
 
 #doom_env = image_preprocessing.PreprocessImage(SkipWrapper(4)(ToDiscrete("minimal")(gym.make("ppaquette/DoomCorridor-v0"))), width = 80, height = 80, grayscale = True)
@@ -91,7 +92,7 @@ number_actions = doom_env.action_space.n
 
 # Building an AI
 cnn = CNN(number_actions)
-softmax_body = SoftmaxBody(T = 1.0)
+softmax_body = SoftmaxBody(T = 0.5)
 ai = AI(brain = cnn, body = softmax_body)
 
 # Setting up Experience Replay
@@ -134,7 +135,7 @@ ma = MA(100)
 
 # Training the AI
 loss = nn.MSELoss()
-optimizer = optim.Adam(cnn.parameters(), lr = 0.001)
+optimizer = optim.Adam(cnn.parameters(), lr = 0.01)
 nb_epochs = 100
 for epoch in range(1, nb_epochs + 1):
     memory.run_steps(200)
@@ -150,7 +151,7 @@ for epoch in range(1, nb_epochs + 1):
     ma.add(rewards_steps)
     avg_reward = ma.average()
     print("Epoch: %s, Average Reward: %s" % (str(epoch), str(avg_reward)))
-    if avg_reward >= 1500:
+    if avg_reward >= 21:
         print("Congratulations, your AI wins")
         break
 
