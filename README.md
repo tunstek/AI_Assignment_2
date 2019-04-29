@@ -25,6 +25,7 @@ A3C - Top performance in 1 hour 40
 
 <details><summary>Output:</summary>
 <p>
+
 ```
 (ai_assignment3)[ec2-user@ip-172-31-43-253 A3C]$ python main.py 
 [2019-04-29 10:19:07,024] Making new env: PongDeterministic-v4
@@ -117,5 +118,6 @@ Time 01h 36m 17s, episode reward 21.0, episode length 1697
 Time 01h 37m 52s, episode reward 21.0, episode length 1697
 Time 01h 39m 26s, episode reward 21.0, episode length 1697
 ```
+
 </p>
 </details>
