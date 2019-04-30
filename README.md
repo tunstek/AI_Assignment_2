@@ -17,4 +17,3 @@ python main.py
 ### Details
 Both algorithms are evaluated using the "CartPole-v1" gym environment
 
-### Results
