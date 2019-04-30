@@ -5,26 +5,24 @@ import datetime
 
 class MountainCar():
     def __init__(self, algo):
-        self.env = gym.make('Pong-ram-v0')
+        self.env = gym.make('CartPole-v1')
         self.env = gym.wrappers.Monitor(self.env, "videos", force=True)
 
         self.input_size = mul(self.env.observation_space.shape)
         self.num_actions = self.env.action_space.n
         print "num_inputs: {}\nnum_actions: {}".format(self.input_size, self.num_actions)
 
-        self.gamma = 0.5
+        self.gamma = 0.9
         self.algo = algo(self.input_size, self.num_actions, self.gamma)
 
         self.run()
 
     def run(self):
         self.env.reset()
-        self.env.render()
         rewards = []
         obs, rew, done, info = self.env.step(self.env.action_space.sample())  # take a random action
         rewards.append(rew)
         while True:
-            self.env.render()
             next_action = self.algo.update(rew, obs)
             obs, rew, done, info = self.env.step(next_action)
             rewards.append(rew)
