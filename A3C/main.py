@@ -16,7 +16,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 
 UPDATE_GLOBAL_ITER = 10
 GAMMA = 0.9
-MAX_EP = 4000
+MAX_REWARD = 4000
 
 env = gym.make('CartPole-v0')
 N_S = env.observation_space.shape[0]
@@ -74,13 +74,13 @@ class Worker(mp.Process):
 
     def run(self):
         total_step = 1
-        while self.g_ep.value < MAX_EP:
+        while self.g_ep_r.value < MAX_REWARD:
             s = self.env.reset()
             buffer_s, buffer_a, buffer_r = [], [], []
             ep_r = 0.
             while True:
-                if self.name == 'w0':
-                    self.env.render()
+                #if self.name == 'w0':
+                #    self.env.render()
                 a = self.lnet.choose_action(v_wrap(s[None, :]))
                 s_, r, done, _ = self.env.step(a)
                 if done: r = -1
@@ -99,6 +99,7 @@ class Worker(mp.Process):
                         break
                 s = s_
                 total_step += 1
+        print(self.g_ep.value)
         self.res_queue.put(None)
 
 
@@ -120,8 +121,16 @@ if __name__ == "__main__":
             break
     [w.join() for w in workers]
 
+    csv = "run,reward\n"
+    for i, r in enumerate(res):
+        csv = csv + "{},{}\n".format(i, r)
+    with open('results/result.csv', 'w') as f:
+        f.write(csv)
+
     import matplotlib.pyplot as plt
     plt.plot(res)
-    plt.ylabel('Moving average ep reward')
-    plt.xlabel('Step')
+    plt.ylabel('Reward')
+    plt.xlabel('Run')
     plt.savefig('results/cartpole.png')
+
+
