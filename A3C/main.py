@@ -16,9 +16,9 @@ os.environ["OMP_NUM_THREADS"] = "1"
 
 UPDATE_GLOBAL_ITER = 10
 GAMMA = 0.9
-MAX_REWARD = 4000
+MAX_STEPS = 40000
 
-env = gym.make('CartPole-v0')
+env = gym.make('CartPole-v1')
 N_S = env.observation_space.shape[0]
 N_A = env.action_space.n
 
@@ -74,7 +74,7 @@ class Worker(mp.Process):
 
     def run(self):
         total_step = 1
-        while self.g_ep_r.value < MAX_REWARD:
+        while self.g_ep.value < MAX_STEPS:
             s = self.env.reset()
             buffer_s, buffer_a, buffer_r = [], [], []
             ep_r = 0.

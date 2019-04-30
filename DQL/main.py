@@ -3,12 +3,12 @@ from util import mul, preprocess_frame
 from DQN import Dqn as DQN
 import datetime
 
-MAX_REWARD = 4000
+MAX_STEPS = 40000
 
 class CartPole():
     def __init__(self, algo):
         self.env = gym.make('CartPole-v1')
-        self.env = gym.wrappers.Monitor(self.env, "videos", force=True)
+        #self.env = gym.wrappers.Monitor(self.env, "videos", force=True)
 
         self.input_size = mul(self.env.observation_space.shape)
         self.num_actions = self.env.action_space.n
@@ -25,16 +25,15 @@ class CartPole():
         rewards = []
         obs, rew, done, info = self.env.step(self.env.action_space.sample())  # take a random action
         rewards.append(rew)
-        while True:
+	step = 0;
+        while step < MAX_STEPS:
             next_action = self.algo.update(rew, obs)
             obs, rew, done, info = self.env.step(next_action)
             rewards.append(rew)
             if done:
-                print("[{}] Reward: {}".format(datetime.datetime.now(), sum(rewards)))
+                step += 1
+	        print("[{}] Step:{} Reward: {}".format(datetime.datetime.now(), step, sum(rewards)))
                 reward_history.append(sum(rewards))
-                if sum(rewards) >= MAX_REWARD:
-                    print("Congratulations, your AI wins")
-                    break
                 rewards = []
                 self.env.reset()
         self.env.close()
@@ -46,6 +45,7 @@ class CartPole():
             f.write(csv)
 
         import matplotlib.pyplot as plt
+        plt.switch_backend('agg')
         plt.plot(reward_history)
         plt.ylabel('Reward')
         plt.xlabel('Run')

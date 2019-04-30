@@ -1,0 +1,4 @@
+  File "main.py", line 15
+    print "num_inputs: {}\nnum_actions: {}".format(self.input_size, self.num_actions)
+                                          ^
+SyntaxError: invalid syntax
