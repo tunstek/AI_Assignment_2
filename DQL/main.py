@@ -3,7 +3,9 @@ from util import mul, preprocess_frame
 from DQN import Dqn as DQN
 import datetime
 
-class MountainCar():
+MAX_REWARD = 4000
+
+class CartPole():
     def __init__(self, algo):
         self.env = gym.make('CartPole-v1')
         self.env = gym.wrappers.Monitor(self.env, "videos", force=True)
@@ -19,6 +21,7 @@ class MountainCar():
 
     def run(self):
         self.env.reset()
+        reward_history = []
         rewards = []
         obs, rew, done, info = self.env.step(self.env.action_space.sample())  # take a random action
         rewards.append(rew)
@@ -28,13 +31,26 @@ class MountainCar():
             rewards.append(rew)
             if done:
                 print("[{}] Reward: {}".format(datetime.datetime.now(), sum(rewards)))
-                rewards = []
-                if sum(rewards) >= 21:
+                reward_history.append(sum(rewards))
+                if sum(rewards) >= MAX_REWARD:
                     print("Congratulations, your AI wins")
                     break
+                rewards = []
                 self.env.reset()
         self.env.close()
 
+        csv = "run,reward\n"
+        for i, r in enumerate(reward_history):
+            csv = csv + "{},{}\n".format(i, r)
+        with open('results/result.csv', 'w') as f:
+            f.write(csv)
+
+        import matplotlib.pyplot as plt
+        plt.plot(reward_history)
+        plt.ylabel('Reward')
+        plt.xlabel('Run')
+        plt.savefig('results/cartpole_runs.png')
+
 
 if __name__ == '__main__':
-    test = MountainCar(DQN)
+    test = CartPole(DQN)
