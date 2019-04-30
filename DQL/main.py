@@ -1,12 +1,14 @@
 import gym
 from util import mul, preprocess_frame
 from DQN import Dqn as DQN
+import datetime
 
 class MountainCar():
     def __init__(self, algo):
-        self.env = gym.make('PongDeterministic-v4')
+        self.env = gym.make('Pong-ram-v0')
+        self.env = gym.wrappers.Monitor(self.env, "videos", force=True)
 
-        self.input_size = mul(self.env.observation_space.shape)/3
+        self.input_size = mul(self.env.observation_space.shape)
         self.num_actions = self.env.action_space.n
         print "num_inputs: {}\nnum_actions: {}".format(self.input_size, self.num_actions)
 
@@ -18,11 +20,21 @@ class MountainCar():
     def run(self):
         self.env.reset()
         self.env.render()
+        rewards = []
         obs, rew, done, info = self.env.step(self.env.action_space.sample())  # take a random action
-        for _ in range(10000):
+        rewards.append(rew)
+        while True:
             self.env.render()
-            next_action = self.algo.update(rew, preprocess_frame(obs))
+            next_action = self.algo.update(rew, obs)
             obs, rew, done, info = self.env.step(next_action)
+            rewards.append(rew)
+            if done:
+                print("[{}] Reward: {}".format(datetime.datetime.now(), sum(rewards)))
+                rewards = []
+                if sum(rewards) >= 21:
+                    print("Congratulations, your AI wins")
+                    break
+                self.env.reset()
         self.env.close()
 
 

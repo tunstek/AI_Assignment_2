@@ -20,7 +20,7 @@ class Params():
         self.num_processes = 4
         self.num_steps = 20
         self.max_episode_length = 10000
-        self.env_name = 'PongDeterministic-v4'
+        self.env_name = 'Pong-v0'
 
 # Main run
 os.environ['OMP_NUM_THREADS'] = '1' # 1 thread per core

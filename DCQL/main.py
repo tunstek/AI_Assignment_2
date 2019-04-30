@@ -24,7 +24,7 @@ import datetime
 # Making the brain
 
 class CNN(nn.Module):
-    
+
     def __init__(self, number_actions):
         super(CNN, self).__init__()
         self.convolution1 = nn.Conv2d(in_channels = 1, out_channels = 32, kernel_size = 5)
@@ -52,7 +52,7 @@ class CNN(nn.Module):
 # Making the body
 
 class SoftmaxBody(nn.Module):
-    
+
     def __init__(self, T):
         super(SoftmaxBody, self).__init__()
         self.T = T
@@ -82,7 +82,7 @@ class AI:
 
 # Getting the Doom environment
 #doom_env = gym.make('PongDeterministic-v4')
-doom_env = image_preprocessing.PreprocessImage(SkipWrapper(4)((gym.make("PongDeterministic-v4"))), width = 80, height = 80, grayscale = True)
+doom_env = image_preprocessing.PreprocessImage(SkipWrapper(4)((gym.make("Pong-v0"))), width = 80, height = 80, grayscale = True)
 doom_env = gym.wrappers.Monitor(doom_env, "videos", force=True)
 number_actions = doom_env.action_space.n
 
@@ -98,7 +98,7 @@ ai = AI(brain = cnn, body = softmax_body)
 # Setting up Experience Replay
 n_steps = experience_replay.NStepProgress(env = doom_env, ai = ai, n_step = 10)
 memory = experience_replay.ReplayMemory(n_steps = n_steps, capacity = 10000)
-    
+
 # Implementing Eligibility Trace
 def eligibility_trace(batch):
     gamma = 0.99
@@ -135,7 +135,7 @@ ma = MA(100)
 
 # Training the AI
 loss = nn.MSELoss()
-optimizer = optim.Adam(cnn.parameters(), lr = 0.001)
+optimizer = optim.Adam(cnn.parameters(), lr = 0.0001)
 nb_epochs = 200
 for epoch in range(1, nb_epochs + 1):
     memory.run_steps(200)
