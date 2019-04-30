@@ -1,43 +1,127 @@
-# Main code
+"""
+Reinforcement Learning (A3C) using Pytroch + multiprocessing.
+The most simple implementation for continuous action.
 
-from __future__ import print_function
-import os
+"""
+
 import torch
+import torch.nn as nn
+from utils import v_wrap, set_init, push_and_pull, record
+import torch.nn.functional as F
 import torch.multiprocessing as mp
-from envs import create_atari_env
-from model import ActorCritic
-from train import train
-from test import test
-import my_optim
+from shared_adam import SharedAdam
+import gym
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
 
-# Gathering all the parameters (that we can modify to explore)
-class Params():
-    def __init__(self):
-        self.lr = 0.0001
-        self.gamma = 0.99
-        self.tau = 1.
-        self.seed = 1
-        self.num_processes = 4
-        self.num_steps = 20
-        self.max_episode_length = 10000
-        self.env_name = 'Pong-v0'
+UPDATE_GLOBAL_ITER = 10
+GAMMA = 0.9
+MAX_EP = 4000
 
-# Main run
-os.environ['OMP_NUM_THREADS'] = '1' # 1 thread per core
-params = Params() # creating the params object from the Params class, that sets all the model parameters
-torch.manual_seed(params.seed) # setting the seed (not essential)
-env = create_atari_env(params.env_name) # we create an optimized environment thanks to universe
-shared_model = ActorCritic(env.observation_space.shape[0], env.action_space) # shared_model is the model shared by the different agents (different threads in different cores)
-shared_model.share_memory() # storing the model in the shared memory of the computer, which allows the threads to have access to this shared memory even if they are in different cores
-optimizer = my_optim.SharedAdam(shared_model.parameters(), lr=params.lr) # the optimizer is also shared because it acts on the shared model
-optimizer.share_memory() # same, we store the optimizer in the shared memory so that all the agents can have access to this shared memory to optimize the model
-processes = [] # initializing the processes with an empty list
-p = mp.Process(target=test, args=(params.num_processes, params, shared_model)) # allowing to create the 'test' process with some arguments 'args' passed to the 'test' target function - the 'test' process doesn't update the shared model but uses it on a part of it - torch.multiprocessing.Process runs a function in an independent thread
-p.start() # starting the created process p
-processes.append(p) # adding the created process p to the list of processes
-for rank in range(0, params.num_processes): # making a loop to run all the other processes that will be trained by updating the shared model
-    p = mp.Process(target=train, args=(rank, params, shared_model, optimizer))
-    p.start()
-    processes.append(p)
-for p in processes: # creating a pointer that will allow to kill all the threads when at least one of the threads, or main.py will be killed, allowing to stop the program safely
-    p.join()
+env = gym.make('CartPole-v0')
+N_S = env.observation_space.shape[0]
+N_A = env.action_space.n
+
+
+class Net(nn.Module):
+    def __init__(self, s_dim, a_dim):
+        super(Net, self).__init__()
+        self.s_dim = s_dim
+        self.a_dim = a_dim
+        self.pi1 = nn.Linear(s_dim, 200)
+        self.pi2 = nn.Linear(200, a_dim)
+        self.v1 = nn.Linear(s_dim, 100)
+        self.v2 = nn.Linear(100, 1)
+        set_init([self.pi1, self.pi2, self.v1, self.v2])
+        self.distribution = torch.distributions.Categorical
+
+    def forward(self, x):
+        pi1 = F.relu6(self.pi1(x))
+        logits = self.pi2(pi1)
+        v1 = F.relu6(self.v1(x))
+        values = self.v2(v1)
+        return logits, values
+
+    def choose_action(self, s):
+        self.eval()
+        logits, _ = self.forward(s)
+        prob = F.softmax(logits, dim=1).data
+        m = self.distribution(prob)
+        return m.sample().numpy()[0]
+
+    def loss_func(self, s, a, v_t):
+        self.train()
+        logits, values = self.forward(s)
+        td = v_t - values
+        c_loss = td.pow(2)
+
+        probs = F.softmax(logits, dim=1)
+        m = self.distribution(probs)
+        exp_v = m.log_prob(a) * td.detach().squeeze()
+        a_loss = -exp_v
+        total_loss = (c_loss + a_loss).mean()
+        return total_loss
+
+
+class Worker(mp.Process):
+    def __init__(self, gnet, opt, global_ep, global_ep_r, res_queue, name):
+        super(Worker, self).__init__()
+        self.name = 'w%i' % name
+        self.g_ep, self.g_ep_r, self.res_queue = global_ep, global_ep_r, res_queue
+        self.gnet, self.opt = gnet, opt
+        self.lnet = Net(N_S, N_A)           # local network
+        self.env = gym.make('CartPole-v0').unwrapped
+
+    def run(self):
+        total_step = 1
+        while self.g_ep.value < MAX_EP:
+            s = self.env.reset()
+            buffer_s, buffer_a, buffer_r = [], [], []
+            ep_r = 0.
+            while True:
+                if self.name == 'w0':
+                    self.env.render()
+                a = self.lnet.choose_action(v_wrap(s[None, :]))
+                s_, r, done, _ = self.env.step(a)
+                if done: r = -1
+                ep_r += r
+                buffer_a.append(a)
+                buffer_s.append(s)
+                buffer_r.append(r)
+
+                if total_step % UPDATE_GLOBAL_ITER == 0 or done:  # update global and assign to local net
+                    # sync
+                    push_and_pull(self.opt, self.lnet, self.gnet, done, s_, buffer_s, buffer_a, buffer_r, GAMMA)
+                    buffer_s, buffer_a, buffer_r = [], [], []
+
+                    if done:  # done and print information
+                        record(self.g_ep, self.g_ep_r, ep_r, self.res_queue, self.name)
+                        break
+                s = s_
+                total_step += 1
+        self.res_queue.put(None)
+
+
+if __name__ == "__main__":
+    gnet = Net(N_S, N_A)        # global network
+    gnet.share_memory()         # share the global parameters in multiprocessing
+    opt = SharedAdam(gnet.parameters(), lr=0.0001)      # global optimizer
+    global_ep, global_ep_r, res_queue = mp.Value('i', 0), mp.Value('d', 0.), mp.Queue()
+
+    # parallel training
+    workers = [Worker(gnet, opt, global_ep, global_ep_r, res_queue, i) for i in range(mp.cpu_count())]
+    [w.start() for w in workers]
+    res = []                    # record episode reward to plot
+    while True:
+        r = res_queue.get()
+        if r is not None:
+            res.append(r)
+        else:
+            break
+    [w.join() for w in workers]
+
+    import matplotlib.pyplot as plt
+    plt.plot(res)
+    plt.ylabel('Moving average ep reward')
+    plt.xlabel('Step')
+    plt.savefig('results/cartpole.png')

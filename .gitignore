@@ -1,6 +1,7 @@
 *.pyc
 .idea/*
 A3C/.idea/*
+DQL/videos/*
 DCQL/videos/*
 A3C/test/*
 eval/*

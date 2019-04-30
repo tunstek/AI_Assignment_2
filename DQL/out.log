@@ -1,0 +1,7 @@
+[2019-04-30 11:02:27,165] Making new env: Pong-ram-v0
+/Users/Keith/anaconda/envs/ai_assignment/lib/python2.7/site-packages/gym/envs/registration.py:17: PkgResourcesDeprecationWarning: Parameters to load are deprecated.  Call .resolve and .require separately.
+  result = entry_point.load(False)
+[2019-04-30 11:02:27,509] Creating monitor directory videos
+num_inputs: 128
+num_actions: 6
+[2019-04-30 11:02:27,529] Starting new video recorder writing to /Users/Keith/Documents/College_Documents/fifth_year/AI/AI_Assignment_2/videos/openaigym.video.0.9669.video000000.mp4
